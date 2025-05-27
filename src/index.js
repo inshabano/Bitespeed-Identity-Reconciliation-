@@ -5,6 +5,18 @@ require('dotenv').config();
 
 const app = express();
 app.use(express.json());
+app.get('/contacts', async (req, res) => {
+  try {
+    const runQuery = (query, params) => new Promise((resolve, reject) => {
+      db.all(query, params, (err, rows) => err ? reject(err) : resolve(rows));
+    });
+    const contacts = await runQuery('SELECT * FROM contact WHERE deletedAt IS NULL', []);
+    res.json(contacts);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 app.post('/identity', async (req, res) => {
   const { email, phoneNumber } = req.body;
@@ -46,7 +58,7 @@ app.post('/identity', async (req, res) => {
     if (existingContacts.length === 0) {
       const insert = `
         INSERT INTO contact (phoneNumber, email, linkPrecedence, createdAt, updatedAt)
-        VALUES (?, ?, 'primary', datetime('now'), datetime('now'))
+        VALUES (?, ?, 'primary', datetime('now', 'localtime'), datetime('now', 'localtime'))
       `;
       newContactId = await runExec(insert, [phoneNumber || null, email || null]);
       primaryContact = { id: newContactId, email, phoneNumber, linkPrecedence: 'primary' };
@@ -65,7 +77,7 @@ app.post('/identity', async (req, res) => {
       if (hasNewInfo) {
         const insert = `
           INSERT INTO contact (phoneNumber, email, linkedId, linkPrecedence, createdAt, updatedAt)
-          VALUES (?, ?, ?, 'secondary', datetime('now'), datetime('now'))
+          VALUES (?, ?, ?, 'secondary', datetime('now', 'localtime'), datetime('now', 'localtime'))
         `;
         newContactId = await runExec(insert, [phoneNumber || null, email || null, primaryContact.id]);
       }
@@ -78,7 +90,7 @@ app.post('/identity', async (req, res) => {
         for (let i = 1; i < primaryContacts.length; i++) {
           const update = `
             UPDATE contact
-            SET linkPrecedence = 'secondary', linkedId = ?, updatedAt = datetime('now')
+            SET linkPrecedence = 'secondary', linkedId = ?, updatedAt = datetime('now', 'localtime')
             WHERE id = ?
           `;
           await runExec(update, [primaryContact.id, primaryContacts[i].id]);
