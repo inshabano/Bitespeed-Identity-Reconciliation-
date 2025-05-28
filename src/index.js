@@ -14,11 +14,11 @@ app.get('/', (req, res) => {
     },
     example: {
       "POST /identity": {
-        url: "http://localhost:3000/identity",
+        url: "https://bitespeed-identity-reconciliation-l7hk.onrender.com/identity",
         body: { email: "hello@email", phoneNumber: "123456789" }
       },
       "DELETE /contact/:id": {
-        url: "http://localhost:3000/contact/1",
+        url: "https://bitespeed-identity-reconciliation-l7hk.onrender.com/contact/1",
         method: "DELETE"
       }
     }
