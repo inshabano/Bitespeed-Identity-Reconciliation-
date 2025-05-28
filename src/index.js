@@ -5,6 +5,26 @@ require('dotenv').config();
 const app = express();
 app.use(express.json());
 
+app.get('/', (req, res) => {
+  res.status(200).json({
+    message: "Welcome to Bitespeed Identity Reconciliation API",
+    endpoints: {
+      "POST /identity": "Reconcile identities with email and/or phoneNumber",
+      "DELETE /contact/:id": "Soft-delete a contact by ID"
+    },
+    example: {
+      "POST /identity": {
+        url: "http://localhost:3000/identity",
+        body: { email: "hello@email", phoneNumber: "123456789" }
+      },
+      "DELETE /contact/:id": {
+        url: "http://localhost:3000/contact/1",
+        method: "DELETE"
+      }
+    }
+  });
+});
+
 app.post('/identity', async (req, res) => {
   const { email, phoneNumber } = req.body;
 
