@@ -134,6 +134,46 @@ app.post('/identity', async (req, res) => {
     res.status(500).json({ error: "Something went wrong on our end." });
   }
 });
+app.delete('/contact/:id', async (req, res) => {
+  const { id } = req.params;
+
+  const execute = (sql, params = []) => {
+    return new Promise((resolve, reject) => {
+      db.run(sql, params, function(err) {
+        if (err) {
+          console.error("Execute failed:", sql, err);
+          reject(err);
+        } else {
+          resolve(this.changes);
+        }
+      });
+    });
+  };
+
+  try {
+    const contact = await db.query(
+      `SELECT * FROM contact WHERE id = ? AND deletedAt IS NULL`,
+      [id]
+    );
+
+    if (contact.length === 0) {
+      return res.status(404).json({ error: "Contact not found" });
+    }
+
+    await execute(
+      `UPDATE contact 
+       SET deletedAt = datetime('now'), 
+           updatedAt = datetime('now') 
+       WHERE id = ?`,
+      [id]
+    );
+
+    res.status(200).json({ message: `Contact with id ${id} has been soft-deleted` });
+  } catch (error) {
+    console.error("Error soft-deleting:", error);
+    res.status(500).json({ error: "Failed soft-delete" });
+  }
+});
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
