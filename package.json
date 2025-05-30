@@ -18,5 +18,5 @@
   "devDependencies": {
     "nodemon": "^3.1.10"
   },
-  "description": ""
+  "description": "This project is a backend API for identity reconciliation, developed for the Bitespeed Backend Task. It matches and links contacts based on email and phone numbers, supports soft deletion, and is hosted on Render.com."
 }

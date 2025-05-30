@@ -6,10 +6,12 @@ require('dotenv').config();
   let db;
   try {
     db = await getDb;
+    console.log('Database initialized:', db ? 'db object exists' : 'db is undefined');
   } catch (err) {
     console.error("Failed to initialize database in index.js:", err.message);
     process.exit(1);
   }
+
   const app = express();
   app.use(express.json());
 
@@ -17,23 +19,24 @@ require('dotenv').config();
     res.status(200).json({
       message: "Welcome to Bitespeed Identity Reconciliation API",
       endpoints: {
-        "POST /identity": "Reconcile identities with email and/or phone number",
+        "POST /identity": "Reconcile identities with email and/or phoneNumber",
         "DELETE /contact/:id": "Soft-delete a contact by ID"
       },
       example: {
         "POST /identity": {
-          url: "https://bitespeed-identity-reconciliation-l7hk.onrender.com/identity",
-          body: { email: "hello@email", phoneNumber: "123456789" }
+          "url": "https://bitespeed-identity-reconciliation-l7hk.onrender.com/identity",
+          "body": { email: "hello@email", phoneNumber: "123456789" }
         },
         "DELETE /contact/:id": {
-          url: "https://bitespeed-identity-reconciliation-l7hk.onrender.com/contact/1",
-          method: "DELETE"
+          "url": "https://bitespeed-identity-reconciliation-l7hk.onrender.com/contact/1",
+          "method": "DELETE"
         }
       }
     });
   });
 
   app.post('/identity', async (req, res) => {
+    console.log('Handling /identity request, db state:', db ? 'db object exists' : 'db is undefined');
     const { email, phoneNumber } = req.body;
 
     if (!email && !phoneNumber) {
@@ -46,7 +49,7 @@ require('dotenv').config();
       return new Promise((resolve, reject) => {
         db.run(sql, params, function(err) {
           if (err) {
-            console.error("Execute failed:", sql, err);
+            console.error("Execute failed:", sql, params, err.message);
             reject(new Error(err.message));
           } else {
             resolve(this.lastID);
@@ -60,8 +63,8 @@ require('dotenv').config();
 
       const existingContacts = await db.query(
         `SELECT * FROM contact 
-        WHERE (email = ? OR phoneNumber = ?) 
-        AND deletedAt IS NULL`,
+         WHERE (email = ? OR phoneNumber = ?) 
+         AND deletedAt IS NULL`,
         [email || null, phoneNumber || null]
       );
 
@@ -71,7 +74,7 @@ require('dotenv').config();
       if (existingContacts.length === 0) {
         newContactId = await execute(
           `INSERT INTO contact (phoneNumber, email, linkPrecedence) 
-          VALUES (?, ?, 'primary')`,
+           VALUES (?, ?, 'primary')`,
           [phoneNumber || null, email || null]
         );
         
@@ -97,8 +100,8 @@ require('dotenv').config();
         if (hasNewEmail || hasNewPhone) {
           newContactId = await execute(
             `INSERT INTO contact 
-            (phoneNumber, email, linkedId, linkPrecedence) 
-            VALUES (?, ?, ?, 'secondary')`,
+             (phoneNumber, email, linkedId, linkPrecedence) 
+             VALUES (?, ?, ?, 'secondary')`,
             [phoneNumber || null, email || null, primaryContact.id]
           );
         }
@@ -109,10 +112,10 @@ require('dotenv').config();
           for (let i = 1; i < primaryContacts.length; i++) {
             await execute(
               `UPDATE contact 
-              SET linkPrecedence = 'secondary', 
-                  linkedId = ?, 
-                  updatedAt = CURRENT_TIMESTAMP
-              WHERE id = ?`,
+               SET linkPrecedence = 'secondary', 
+                   linkedId = ?, 
+                   updatedAt = CURRENT_TIMESTAMP
+               WHERE id = ?`,
               [primaryContacts[0].id, primaryContacts[i].id]
             );
           }
@@ -122,8 +125,8 @@ require('dotenv').config();
 
       const linkedContacts = await db.query(
         `SELECT * FROM contact 
-        WHERE (id = ? OR linkedId = ?) 
-        AND deletedAt IS NULL`,
+         WHERE (id = ? OR linkedId = ?) 
+         AND deletedAt IS NULL`,
         [primaryContact.id, primaryContact.id]
       );
 
@@ -155,13 +158,13 @@ require('dotenv').config();
 
     } catch (error) {
       await execute("ROLLBACK").catch(rollbackErr => {
-        console.error("Rollback failed", rollbackErr);
+        console.error("Rollback failed in /identity:", rollbackErr.message);
       });
-      
-      console.error("Error handling request:", error.message);
+      console.error("Error handling /identity request:", error.message, error.stack);
       res.status(500).json({ error: "Something went wrong on our end." });
     }
   });
+
   app.delete('/contact/:id', async (req, res) => {
     const { id } = req.params;
 
@@ -169,7 +172,7 @@ require('dotenv').config();
       return new Promise((resolve, reject) => {
         db.run(sql, params, function(err) {
           if (err) {
-            console.error("Execute failed:", sql, err);
+            console.error("Execute failed:", sql, params, err.message);
             reject(new Error(err.message));
           } else {
             resolve(this.changes);
@@ -190,15 +193,15 @@ require('dotenv').config();
 
       await execute(
         `UPDATE contact 
-        SET deletedAt = datetime('now'), 
-            updatedAt = datetime('now') 
-        WHERE id = ?`,
+         SET deletedAt = datetime('now'), 
+             updatedAt = datetime('now') 
+         WHERE id = ?`,
         [id]
       );
 
       res.status(200).json({ message: `Contact with id ${id} has been soft-deleted` });
     } catch (error) {
-      console.error("Error soft-deleting:", error.message);
+      console.error("Error soft-deleting /contact/:id:", error.message, error.stack);
       res.status(500).json({ error: "Failed soft-delete" });
     }
   });
@@ -213,11 +216,11 @@ require('dotenv').config();
   });
 
   process.on('uncaughtException', (err) => {
-    console.error("Something unexpected happened:", err.message);
+    console.error("Something unexpected happened:", err.message, err.stack);
   });
 
   process.on('unhandledRejection', (err) => {
-    console.error("promise rejected but not caught:", err).message;
+    console.error("Promise rejected but not caught:", err.message, err.stack);
   });
 
   module.exports = app;

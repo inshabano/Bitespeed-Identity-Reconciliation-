@@ -53,13 +53,13 @@ const initializeDatabase = async () => {
           updatedAt TEXT NOT NULL DEFAULT (datetime('now')),
           deletedAt TEXT,
           FOREIGN KEY (linkedId) REFERENCES contact(id)
-        );
+        )
       `, (err) => {
         if (err) {
           console.error("Failed to create contact table:", err.message);
-        } else {
-          console.log("Contact table created or already exists");
+          throw err;
         }
+        console.log("Contact table created or already exists");
       });
 
       db.run(`
@@ -67,7 +67,7 @@ const initializeDatabase = async () => {
         ON contact(email) 
         WHERE email IS NOT NULL
       `, (err) => {
-        if (err) console.error("Failed to create email index:", err.message);
+        if (err) console.error("Failed to create email_index:", err.message);
       });
 
       db.run(`
@@ -75,7 +75,7 @@ const initializeDatabase = async () => {
         ON contact(phoneNumber) 
         WHERE phoneNumber IS NOT NULL
       `, (err) => {
-        if (err) console.error("Phone index error:", err.message);
+        if (err) console.error("Failed to create phone_index:", err.message);
       });
 
       db.run(`
@@ -83,7 +83,7 @@ const initializeDatabase = async () => {
         ON contact(linkedId) 
         WHERE linkedId IS NOT NULL
       `, (err) => {
-        if (err) console.error("LinkedId index error:", err.message);
+        if (err) console.error("Failed to create linked_index:", err.message);
       });
     });
 
@@ -91,7 +91,7 @@ const initializeDatabase = async () => {
       return new Promise((resolve, reject) => {
         db.all(sql, params, (err, rows) => {
           if (err) {
-            console.error('Query failed:', sql, params,err.message);
+            console.error('Query failed:', sql, params, err.message);
             reject(err);
           } else {
             resolve(rows);
@@ -99,11 +99,12 @@ const initializeDatabase = async () => {
         });
       });
     };
+
     return db;
   } catch (err) {
     console.error('Failed to initialize database:', err.message);
     throw err;
   }
-}
+};
 
 module.exports = initializeDatabase();
