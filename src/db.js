@@ -23,19 +23,19 @@ const connectToDatabase = () => {
 
 
 
-try {
-  db = new sqlite3.Database(dbPath, (err) => {
-    if (err) {
-      console.error('Oops! Could not connect to the database:', err.message);
-      process.exit(1); // Exit if can't connect to DB
-    } else {
-      console.log(`Connected to database at ${dbPath}`);
-    }
-  });
-} catch (err) {
-  console.error('Failed to connect to DB:', err);
-  throw err;
-}
+// try {
+//   db = new sqlite3.Database(dbPath, (err) => {
+//     if (err) {
+//       console.error('Could not connect to the database:', err.message);
+//       process.exit(1);
+//     } else {
+//       console.log(`Connected to database at ${dbPath}`);
+//     }
+//   });
+// } catch (err) {
+//   console.error('Failed to connect to DB:', err);
+//   throw err;
+// }
 
 // Creating table
 const initializeDatabase = async () => {
