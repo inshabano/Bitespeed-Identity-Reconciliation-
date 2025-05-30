@@ -96,7 +96,7 @@ curl https://bitespeed-identity-reconciliation-l7hk.onrender.com
   "example": {
     "POST /identity": {
       "url": "https://bitespeed-identity-reconciliation-l7hk.onrender.com/identity",
-      "body": { "email": "hello@welcome", "phoneNumber": "1234567890" }
+      "body": { "email": "hello@email", "phoneNumber": "1234567890" }
     },
     "DELETE /contact/:id": {
       "url": "https://bitespeed-identity-reconciliation-l7hk.onrender.com/contact/1",
