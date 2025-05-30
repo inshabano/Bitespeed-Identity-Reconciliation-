@@ -9,7 +9,7 @@ app.get('/', (req, res) => {
   res.status(200).json({
     message: "Welcome to Bitespeed Identity Reconciliation API",
     endpoints: {
-      "POST /identity": "Reconcile identities with email and/or phoneNumber",
+      "POST /identity": "Reconcile identities with email and/or phone number",
       "DELETE /contact/:id": "Soft-delete a contact by ID"
     },
     example: {
@@ -39,7 +39,7 @@ app.post('/identity', async (req, res) => {
       db.run(sql, params, function(err) {
         if (err) {
           console.error("Execute failed:", sql, err);
-          reject(err);
+          reject(new Error(err.message));
         } else {
           resolve(this.lastID);
         }
@@ -48,7 +48,7 @@ app.post('/identity', async (req, res) => {
   };
 
   try {
-    await execute("begin");
+    await execute("BEGIN");
 
     const existingContacts = await db.query(
       `SELECT * FROM contact 
@@ -150,7 +150,7 @@ app.post('/identity', async (req, res) => {
       console.error("Rollback failed", rollbackErr);
     });
     
-    console.error("Error handling request:", error);
+    console.error("Error handling request:", error.message);
     res.status(500).json({ error: "Something went wrong on our end." });
   }
 });
@@ -162,7 +162,7 @@ app.delete('/contact/:id', async (req, res) => {
       db.run(sql, params, function(err) {
         if (err) {
           console.error("Execute failed:", sql, err);
-          reject(err);
+          reject(new Error(err.message));
         } else {
           resolve(this.changes);
         }
@@ -190,7 +190,7 @@ app.delete('/contact/:id', async (req, res) => {
 
     res.status(200).json({ message: `Contact with id ${id} has been soft-deleted` });
   } catch (error) {
-    console.error("Error soft-deleting:", error);
+    console.error("Error soft-deleting:", error.message);
     res.status(500).json({ error: "Failed soft-delete" });
   }
 });
@@ -200,16 +200,16 @@ app.listen(port, () => {
   console.log(`Server is listening on port ${port}`);
   console.log(`Try sending a POST to http://localhost:${port}/identity`);
 }).on('error', (err) => {
-  console.error("Server crashed on startup:", err);
+  console.error("Server crashed on startup:", err.message);
   process.exit(1);
 });
 
 process.on('uncaughtException', (err) => {
-  console.error("Something unexpected happened:", err);
+  console.error("Something unexpected happened:", err.message);
 });
 
 process.on('unhandledRejection', (err) => {
-  console.error("promise rejected but not caught:", err);
+  console.error("promise rejected but not caught:", err).message;
 });
 
 module.exports = app;
